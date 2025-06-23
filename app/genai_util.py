@@ -1,7 +1,9 @@
 import os
 from google import genai
 from google.genai import types
+from google.genai.types import GenerateContentConfig
 from config import GEMINI_FLASH_MODEL
+from models import FabricAnalysis, FABRIC_RESPONSE_SCHEMA
 
 class GeminiClient:
     def __init__(self, temperature=0.2, top_p=1.0, top_k=1, candidate_count=1, api_key=None):
@@ -39,24 +41,47 @@ class GeminiClient:
             ],
         )
 
-    def generate(self, prompt: str, images: list[dict] = None):
-        input_parts = [types.Part(text=prompt)]
-
-        if images:
-            for image in images:
-                input_parts.append(
-                    types.Part.from_data(
-                        data=image["data"],
-                        mime_type=image["mime_type"]
-                    )
-                )
+    def analyze(self, image_data: bytes, image_mime_type="image/jpeg") -> dict:
+        input_parts = [
+            types.Part(text=(
+                "Analyze this fabric image and provide detailed information about: "
+                "material composition, color palette (including secondary colors), "
+                "pattern characteristics, texture properties, structural elements, and style context. "
+            )),
+            types.Part(
+            inline_data=genai.types.Blob(
+                mime_type=image_mime_type,
+                data=image_data
+            )
+        )
+        ]
 
         response = self.client.models.generate_content(
-            model=GEMINI_FLASH_MODEL,
+            model="gemini-2.0-flash",
             contents=input_parts,
-            config=self.generation_config
+            config=GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=FABRIC_RESPONSE_SCHEMA)
         )
-        return response.text.strip()
+
+        import json
+        try:
+            response_obj = json.loads(response.text)
+        except json.JSONDecodeError:
+            raise ValueError("Gemini response was not valid JSON")
+
+        fabric_analysis = FabricAnalysis.parse_obj(response_obj)
+        return fabric_analysis.dict()
+
+    def analyze_fabrics(self, images: list[dict]) -> list[dict]:
+        print("inside analyze_fabrics")
+        results = []
+        for img in images:
+            print(img)
+            result = self.analyze(image_data=img["data"], image_mime_type=img.get("mime_type"))
+            results.append(result)
+        return results
+
 
     def get_joke(self):
         input_parts = [types.Part(text="Tell me a short, funny joke.")]
