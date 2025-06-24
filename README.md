@@ -20,7 +20,7 @@ python -m pip install -r requirements.txt
 start server with  ```uvicorn main:app --reload```
 
 
-Once app is running you can test using swagger openAPI `/docs` endpoint at `localhost:8000/doc`s, just select the method from dropdown and then hit `try it out` 
+Once app is running you can test using swagger openAPI `/docs` endpoint at `localhost:8000/docs`, just select the method from dropdown and then hit `try it out` 
 
 To test API with Postman: 
 
