@@ -29,5 +29,5 @@ Install Postman --> https://www.postman.com/downloads/
 <br>
 set address to `localhost:8000/analyze_fabrics` method is `POST`
 <br>
- ![alt text](image.png) <br>
+ ![alt text](pm_image.png) <br>
  upload files via `form-data` then `files`
